@@ -23,17 +23,12 @@ iptables -A OUTPUT -p icmp -j DROP --icmp-type echo-reply
 #echo "Block DDOS - UDP-flood (Pepsi)"
 iptables -A INPUT -p udp --dport 7777 -i eth0 -m state --state NEW -m recent --set
 iptables -A INPUT -p udp --dport 7777 -i eth0 -m state --state NEW -m recent --update --seconds 1 --hitcount 1 -j DROP
-iptables -t nat -A PREROUTING -p udp --dport 7777 -s 127.0.0.1 -m string --algo bm --string 'SAMP' -j REDIRECT --to-port 7777
-iptables -t nat -A PREROUTING -p udp --dport 7777 -m string --algo bm --string 'SAMP' -j REDIRECT --to-port 7777
-iptables -I INPUT -p udp --dport 7777 -m string --algo bm --string 'SAMP' -m hashlimit ! --hashlimit-upto 3/sec --hashlimit-burst 3/sec --hashlimit-mode srcip --hashlimit-name query -j DROP
-iptables -I INPUT -p udp --dport 7777  -m  string --algo kmp   --hex-string   '|081e77da|' -m recent --name test ! --rcheck  -m recent --name test --set   -j  DROP
-iptables -I INPUT -p udp --dport 7777  -m  string --algo kmp   --hex-string   '|081e77da|'  -m recent --name test --rcheck --seconds 2  --hitcount 1     -j DROP 
-iptables -I INPUT  -p udp --dport 7777  -m  string --algo kmp   --hex-string   '|53414d50|' -m  string --algo kmp   --hex-string   '|611e63|'  -m recent --name limitC7777 ! --rcheck  -m recent --name limitC7777 --set -j DROP
-iptables -I INPUT  -p udp --dport 7777   -m  string --algo kmp   --hex-string   '|53414d50|' -m  string --algo kmp   --hex-string   '|611e63|' -m recent --name limitC7777 --rcheck  --seconds 2 --hitcount 1   -j DROP
-iptables -I INPUT  -p udp --dport 7777  -m  string --algo kmp   --hex-string   '|53414d50|' -m  string --algo kmp   --hex-string   '|611e69|'  -m recent --name limitI7777 ! --rcheck  -m recent --name limitI7777 --set 
-iptables -I INPUT  -p udp --dport 7777   -m  string --algo kmp   --hex-string   '|53414d50|' -m  string --algo kmp   --hex-string   '|611e69|' -m recent --name limitI7777 --rcheck  --seconds 2 --hitcount 1   -j DROP
-iptables -I INPUT  -p udp --dport 7777  -m  string --algo kmp   --hex-string   '|53414d50|' -m  string --algo kmp   --hex-string   '|611e72|'  -m recent --name limitR7777 ! --rcheck  -m recent --name limitR7777 --set -j DROP
-iptables -I INPUT -p udp --dport 7777 -m string --algo kmp --hex-string '|53414d50|' -m string --algo kmp --hex-string '|611e72|' -m recent --name limitR7777 --rcheck --seconds 2 --hitcount 1 -j DROP
+iptables -N SAMP-DDOS
+iptables -A INPUT -p udp --dport 7777 -m ttl --ttl-eq=128 -j SAMP-DDOS
+iptables -A SAMP-DDOS -p udp --dport 7777 -m length --length 17:604 -j DROP
+iptables -A INPUT -p udp -m ttl --ttl-eq=128 -j DROP
+iptables -A INPUT -p udp --dport 7777 -m limit --limit 1/s --limit-burst 1 -j DROP
+iptables -A INPUT -p udp --dport 7777 -j ACCEPT
 #echo "Block DDOS - SMBnuke"
 iptables -A INPUT -p UDP --dport 135:139 -j DROP
 #echo "Block DDOS - Fraggle"
